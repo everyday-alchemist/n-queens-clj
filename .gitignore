@@ -1,0 +1,13 @@
+/.nrepl-port
+/.prepl-port
+/.cpcache
+/.lsp
+/.clj-kondo
+/classes
+/build
+*.jar
+*.class
+*build_artifacts*
+fmt-nm
+*.*~
+#*#
