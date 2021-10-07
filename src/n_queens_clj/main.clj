@@ -30,6 +30,14 @@
       [0 (+ 3 diag)]
       [diag 3])))
 
+(defn down-diag
+  [[col row]]
+  (- col row))
+
+(defn up-diag
+  [[col row] n]
+  (- (+ col row) n -1))
+
 (defn down-diag-ind
   "takes a top-left to bottom-right diagonal 
   starting point and returns its indices"
@@ -88,39 +96,50 @@
        (unocc-down-diag? board [col row])
        (unocc-up-diag? board [col row])))
 
+(defn valid-queen-pt2?
+  [occ row down up]
+  (not
+   (or (contains? (get occ :rows) row)
+       (contains? (get occ :down-diag) down)
+       (contains? (get occ :up-diag)  up))))
 
 (def results (atom []))
 
-(defn n-queens 
-  [board [col row] queens]
+(defn n-queens
+  [board [col row] queens occ]
 ;  (pprint board)
+;  (pprint occ)
 ;  (println (str [col row]))
 ;  (println (str "Queens: " queens))
 ;  (println "------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
-  (when (= queens 8)
-    (println "solution")
-    (pprint board))
-  (let [n (count board)]
+;  (when (= queens 8)
+;    (println "SOLUTION\n\n\n\n\n"))
+  (let [n (count board) ; make this global to eliminate this operation from every loop
+        curr-down-diag (down-diag [col row]) ; not worth splitting this into to lets to optimize
+        curr-up-diag (up-diag [col row] n)]
     (when (and (< col n)
-             (< row n))
-      (if (valid-queen-pt? board [col row])
+               (< row n))
+      (if (valid-queen-pt2? occ row curr-down-diag curr-up-diag)
         ;; this is a valid spot for a queen
         (if (< queens n)
           ;; this queen will not be the nth queen
           (do
             ;; recurse, adding queen to [col row] moving to the first row of the next col and inc queen count
-            (n-queens (set-2d board [col row] "Q") [(inc col) 0] (inc queens))
+            (n-queens (set-2d board [col row] "Q") [(inc col) 0] (inc queens) (-> occ
+                                                                                  (update :rows conj row)
+                                                                                  (update :down-diag conj curr-down-diag)
+                                                                                  (update :up-diag conj curr-up-diag)))
             ;; backtrack, trying next row without adding a queen
-            (n-queens board [col (inc row)] queens))
+            (n-queens board [col (inc row)] queens occ))
           ;; this queen will complete a solution
           ;; backtrack by recursing without placing the queen 
           (do
             (swap! results conj (set-2d board [col row] "Q"))
-            (n-queens board [col (inc row)] queens)))
+            (n-queens board [col (inc row)] queens occ)))
         ;; this is not a valid spot for a queen - try next row
-        (n-queens board [col (inc row)] queens)))))
+        (n-queens board [col (inc row)] queens occ)))))
 
-(defn -main 
+(defn -main
   []
   (let [board [[nil nil nil nil nil nil nil nil]
                [nil nil nil nil nil nil nil nil]
@@ -130,9 +149,5 @@
                [nil nil nil nil nil nil nil nil]
                [nil nil nil nil nil nil nil nil]
                [nil nil nil nil nil nil nil nil]]]
-    (n-queens board [0 0] 0))
+    (time (n-queens board [0 0] 0 {:rows #{} :down-diag #{} :up-diag #{}})))
   (pprint @results))
-
-;; FIXME: something is broken with the up-diag functions
-(up-diag-ind (up-diag-start [1 6] 8) 8)
-(up-diag-start [1 6] 8)
